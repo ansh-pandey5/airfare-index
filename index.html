@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Airfare Index — a decision dashboard for tracking simulated domestic airfare trends." />
+  <title>Airfare Index — Aviation Pricing Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root{--bg:#07090d;--panel:#0d1118;--panel2:#111722;--line:#202936;--text:#eef3f8;--muted:#8490a0;--accent:#76e4bd;--blue:#79a8ff;--amber:#f2c66d;--red:#ff7f87;--radius:16px;}
+    *{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 70% -10%,#172338 0,#07090d 38%);color:var(--text);font-family:'DM Sans',sans-serif} button,input,select{font:inherit} button{cursor:pointer}
+    .shell{display:flex;min-height:100vh}.sidebar{width:244px;border-right:1px solid var(--line);background:rgba(7,9,13,.86);padding:25px 16px;position:fixed;inset:0 auto 0 0;z-index:5}.brand{display:flex;align-items:center;gap:10px;padding:0 10px 30px}.logo{width:31px;height:31px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#79a8ff);display:grid;place-items:center;color:#06100d;font-weight:800}.brand strong{font-family:'Space Grotesk';font-size:17px}.brand span{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-top:2px}.nav-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#596473;padding:0 12px 9px}.nav a{display:flex;gap:11px;align-items:center;color:#98a3b1;text-decoration:none;padding:10px 12px;border-radius:10px;font-size:13px;margin:2px 0}.nav a.active,.nav a:hover{background:#151c26;color:#fff}.nav a.active{box-shadow:inset 2px 0 var(--accent)}.side-bottom{position:absolute;bottom:20px;left:16px;right:16px}.demo{border:1px solid #274438;background:#0c1714;padding:12px;border-radius:12px;font-size:11px;color:#8db6a8}.demo b{color:var(--accent)}
+    main{margin-left:244px;width:calc(100% - 244px);padding:26px 30px 40px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px}.eyebrow{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.14em}.top h1{font-family:'Space Grotesk';font-size:25px;margin:5px 0}.top p{color:var(--muted);font-size:12px;margin:0}.actions{display:flex;gap:8px}.btn{background:#111721;border:1px solid var(--line);color:#cbd3dc;padding:9px 12px;border-radius:9px;font-size:12px}.btn:hover{border-color:#3a4656}.btn.primary{background:#dffcf1;color:#06120d;border-color:#dffcf1;font-weight:700}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:linear-gradient(180deg,rgba(17,23,34,.95),rgba(11,15,22,.95));border:1px solid var(--line);border-radius:var(--radius);padding:18px}.kpi-label{color:var(--muted);font-size:11px}.kpi{font-family:'Space Grotesk';font-size:28px;font-weight:600;margin:7px 0}.delta{font-size:11px}.up{color:var(--red)}.down{color:var(--accent)}.neutral{color:var(--amber)}
+    .grid{display:grid;grid-template-columns:1.55fr 1fr;gap:12px;margin-top:12px}.wide{grid-column:1/-1}.card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.card-title{font-family:'Space Grotesk';font-size:14px;font-weight:600}.card-sub{font-size:11px;color:var(--muted);margin-top:4px}.select{background:#0b1017;border:1px solid var(--line);color:#bac4cf;padding:7px 9px;border-radius:8px;font-size:11px}.chart-wrap{height:270px;position:relative}.small-chart{height:205px}.legend{display:flex;gap:14px;color:var(--muted);font-size:10px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--accent)}.dot.blue{background:var(--blue)}
+    .table{width:100%;border-collapse:collapse;font-size:12px}.table th{text-align:left;color:#697585;font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:500;padding:9px 7px;border-bottom:1px solid var(--line)}.table td{padding:11px 7px;border-bottom:1px solid #171e28}.table tr:last-child td{border:0}.route{font-weight:600}.muted{color:var(--muted)}.pill{padding:4px 7px;border-radius:999px;font-size:10px;background:#151d28;color:#aab5c2}.pill.good{background:#10251e;color:var(--accent)}.pill.warn{background:#272015;color:var(--amber)}.pill.bad{background:#28171b;color:var(--red)}
+    .heatmap{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-top:13px}.cell{height:38px;border-radius:6px;background:#142019;border:1px solid #20372e;display:flex;align-items:center;justify-content:center;font-size:9px;color:#abc0b7}.h1{background:#122019}.h2{background:#183327}.h3{background:#1d4939}.h4{background:#28634b}.h5{background:#398363}.h6{background:#57aa86;color:#07130e}.heat-labels{display:flex;justify-content:space-between;color:#657080;font-size:9px;margin-top:7px}.route-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.route-box{border:1px solid var(--line);border-radius:10px;padding:12px}.route-box strong{font-size:12px}.route-box .price{font-family:'Space Grotesk';font-size:19px;margin:5px 0}.spark{height:24px;width:100%;margin-top:5px}
+    .explorer{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:end}.field label{display:block;font-size:10px;color:#697585;margin-bottom:5px}.field input,.field select{width:100%;background:#0a0f15;color:#dce3ea;border:1px solid var(--line);padding:9px;border-radius:8px;outline:none}.result{margin-top:14px;border-top:1px solid var(--line);padding-top:14px;display:flex;justify-content:space-between;align-items:center}.bigprice{font-family:'Space Grotesk';font-size:30px}.method{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.method div{background:#0b1017;border:1px solid var(--line);border-radius:10px;padding:13px}.method b{font-size:18px;font-family:'Space Grotesk'}.method span{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+    footer{color:#596473;font-size:10px;text-align:center;padding:25px}.mobile{display:none}
+    @media(max-width:950px){.sidebar{width:70px;padding:18px 8px}.brand div:not(.logo),.nav-title,.nav a span,.side-bottom{display:none}.brand{padding:0 11px 25px}.nav a{justify-content:center}.nav a.active{box-shadow:none}.sidebar{display:block}main{margin-left:70px;width:calc(100% - 70px);padding:20px}.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.explorer{grid-template-columns:1fr 1fr}.method{grid-template-columns:1fr 1fr}}
+    @media(max-width:580px){main{padding:16px}.top{align-items:flex-start}.actions .btn:not(.primary){display:none}.top h1{font-size:21px}.kpis{grid-template-columns:1fr 1fr;gap:8px}.card{padding:14px}.kpi{font-size:23px}.route-grid{grid-template-columns:1fr 1fr}.heatmap{grid-template-columns:repeat(6,1fr)}.explorer{grid-template-columns:1fr}.method{grid-template-columns:1fr}.table{min-width:560px}.table-wrap{overflow:auto}.mobile{display:block}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">A</div><div><strong>Airfare Index</strong><span>Pricing Intelligence</span></div></div>
+    <div class="nav-title">Workspace</div>
+    <nav class="nav">
+      <a class="active" href="#overview"><span>◈</span><span>Overview</span></a>
+      <a href="#routes"><span>⌁</span><span>Routes</span></a>
+      <a href="#trends"><span>⌁</span><span>Price Trends</span></a>
+      <a href="#airlines"><span>✈</span><span>Airlines</span></a>
+      <a href="#explorer"><span>⌕</span><span>Fare Explorer</span></a>
+    </nav>
+    <div class="nav-title" style="margin-top:25px">Reference</div>
+    <nav class="nav">
+      <a href="#quality"><span>✓</span><span>Data Quality</span></a>
+      <a href="#methodology"><span>≡</span><span>Methodology</span></a>
+      <a href="#api"><span>↯</span><span>API Access</span></a>
+    </nav>
+    <div class="side-bottom"><div class="demo"><b>DEMO DATA</b><br>Simulated market observations. Not live airline or government data.</div></div>
+  </aside>
+  <main>
+    <header class="top" id="overview">
+      <div><div class="eyebrow">India domestic aviation</div><h1>Airfare market monitor</h1><p>Indicative pricing intelligence across major domestic sectors · Updated 03 Sep 2026</p></div>
+      <div class="actions"><button class="btn" onclick="alert('Demo export: CSV generation is available in the production API layer.')">Export</button><button class="btn primary" onclick="refreshData()">↻ Refresh</button></div>
+    </header>
+    <section class="kpis">
+      <div class="card"><div class="kpi-label">Airfare Price Index</div><div class="kpi" id="indexKpi">127.4</div><div class="delta up">▲ 3.8% vs 30 days</div></div>
+      <div class="card"><div class="kpi-label">Median one-way fare</div><div class="kpi">₹5,840</div><div class="delta up">▲ 2.1% vs prior period</div></div>
+      <div class="card"><div class="kpi-label">Routes monitored</div><div class="kpi">42</div><div class="delta down">● 98.2% coverage</div></div>
+      <div class="card"><div class="kpi-label">Data quality score</div><div class="kpi">96.8</div><div class="delta down">▲ 0.7 pts this week</div></div>
+    </section>
+    <section class="grid" id="trends">
+      <div class="card wide"><div class="card-head"><div><div class="card-title">Airfare Price Index</div><div class="card-sub">Weighted composite · base = 100 · last 45 days</div></div><div><select class="select" id="horizon" onchange="updateChart()"><option value="45">T+45 days</option><option value="30">T+30 days</option><option value="15">T+15 days</option><option value="7">T+7 days</option><option value="1">T+1 day</option></select></div></div><div class="legend"><span><i class="dot"></i>Market index</span><span><i class="dot blue"></i>Rolling 7D average</span></div><div class="chart-wrap"><canvas id="indexChart"></canvas></div></div>
+      <div class="card" id="routes"><div class="card-head"><div><div class="card-title">Route pressure</div><div class="card-sub">Highest fare movement</div></div></div><div class="route-grid" id="routeGrid"></div></div>
+      <div class="card" id="airlines"><div class="card-head"><div><div class="card-title">Airline comparison</div><div class="card-sub">Median fare across monitored sectors</div></div></div><div class="chart-wrap small-chart"><canvas id="airlineChart"></canvas></div></div>
+      <div class="card"><div class="card-head"><div><div class="card-title">Sector heatmap</div><div class="card-sub">Relative fare pressure by corridor</div></div></div><div class="heatmap" id="heatmap"></div><div class="heat-labels"><span>Lower pressure</span><span>Higher pressure</span></div></div>
+      <div class="card wide"><div class="card-head"><div><div class="card-title">Route-wise airfare tracking</div><div class="card-sub">Indicative median one-way economy fares</div></div><select class="select" id="sort" onchange="renderTable()"><option value="pressure">Sort: pressure</option><option value="fare">Sort: fare</option><option value="change">Sort: change</option></select></div><div class="table-wrap"><table class="table"><thead><tr><th>Sector</th><th>Median fare</th><th>30D change</th><th>Demand</th><th>Pressure</th><th>Observation</th></tr></thead><tbody id="routeTable"></tbody></table></div></div>
+      <div class="card wide" id="explorer"><div class="card-head"><div><div class="card-title">Fare explorer</div><div class="card-sub">Query the demo market model by sector and booking horizon</div></div><span class="pill good">MODEL READY</span></div><div class="explorer"><div class="field"><label>From</label><select id="from"><option>DEL</option><option>BOM</option><option>BLR</option><option>HYD</option><option>CCU</option><option>MAA</option></select></div><div class="field"><label>To</label><select id="to"><option>BOM</option><option>DEL</option><option>BLR</option><option>HYD</option><option>CCU</option><option>MAA</option></select></div><div class="field"><label>Travel date</label><input type="date" id="travelDate" value="2026-09-18"></div><div class="field"><label>Cabin</label><select><option>Economy</option><option>Premium Economy</option></select></div><button class="btn primary" onclick="exploreFare()">Find fare</button></div><div class="result"><div><div class="muted" style="font-size:10px">INDICATIVE MEDIAN</div><div class="bigprice" id="fareResult">₹5,960</div></div><div class="muted" id="fareMeta">DEL → BOM · 15 days ahead · Demo estimate</div></div></div>
+      <div class="card" id="quality"><div class="card-head"><div><div class="card-title">Data quality</div><div class="card-sub">Pipeline health</div></div><span class="pill good">HEALTHY</span></div><div class="method"><div><b>98.2%</b><span>route coverage</span></div><div><b>99.1%</b><span>schema validity</span></div><div><b>0.8%</b><span>missing values</span></div><div><b>4m</b><span>freshness lag</span></div></div></div>
+      <div class="card" id="methodology"><div class="card-head"><div><div class="card-title">Methodology</div><div class="card-sub">How the index is designed</div></div></div><p class="muted" style="font-size:12px;line-height:1.7;margin:0">The index is designed as a transparent, route-weighted measure of domestic airfare movement. Production inputs can include fare observations, booking horizon, cabin, airline, route demand and data-quality flags. The demo frontend uses synthetic observations only.</p></div>
+      <div class="card" id="api"><div class="card-head"><div><div class="card-title">API & data access</div><div class="card-sub">Production-ready interface preview</div></div><span class="pill">v0.1</span></div><div style="background:#080c12;border:1px solid var(--line);border-radius:9px;padding:12px;font-family:monospace;font-size:10px;color:#9eabb9;overflow:auto">GET /api/v1/index?route=DEL-BOM&horizon=T+15<br>GET /api/v1/routes?date=2026-09-03<br>GET /api/v1/fare-explorer?from=DEL&to=BOM</div></div>
+    </section>
+    <footer>Airfare Index · Demo environment · Synthetic data for product demonstration · No live fare claim</footer>
+  </main>
+</div>
+<script>
+const routes=[
+ {r:'DEL → BOM',fare:5960,change:4.8,demand:'High',pressure:86,note:'Peak-weekend sensitivity'},
+ {r:'BOM → BLR',fare:4820,change:2.9,demand:'High',pressure:74,note:'Stable capacity'},
+ {r:'DEL → BLR',fare:6410,change:5.6,demand:'High',pressure:91,note:'Tight near-term inventory'},
+ {r:'HYD → DEL',fare:5280,change:-1.4,demand:'Medium',pressure:48,note:'Improving availability'},
+ {r:'CCU → DEL',fare:5710,change:3.2,demand:'Medium',pressure:63,note:'Moderate upward drift'},
+ {r:'MAA → BOM',fare:4550,change:-2.2,demand:'Low',pressure:39,note:'Competitive market'},
+ {r:'BLR → HYD',fare:3310,change:1.1,demand:'Medium',pressure:44,note:'Short-haul stable'},
+ {r:'DEL → GOI',fare:6840,change:7.1,demand:'High',pressure:94,note:'Leisure demand elevated'}
+];
+let chart;
+function seeded(i){return Math.sin(i*1.71)*2.1+Math.cos(i*.53)*1.4}
+function series(n=45){return Array.from({length:n},(_,i)=>Number((121+i*.145+seeded(i)+(i>31?(i-31)*.13:0)).toFixed(1)))}
+function updateChart(){const n=+document.getElementById('horizon').value;const all=series(45);const data=all.slice(-n);const labels=data.map((_,i)=>n<=7?`T-${n-i}`:`${i+1}d`);const rolling=data.map((v,i)=>Number(data.slice(Math.max(0,i-6),i+1).reduce((a,b)=>a+b,0)/(Math.min(i+1,7))).toFixed(1));if(chart)chart.destroy();chart=new Chart(document.getElementById('indexChart'),{type:'line',data:{labels,datasets:[{data,borderWidth:2,pointRadius:0,tension:.35,borderColor:'#76e4bd',fill:true,backgroundColor:'rgba(118,228,189,.06)'},{data:rolling,borderWidth:1.5,pointRadius:0,tension:.35,borderColor:'#79a8ff',borderDash:[4,4]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#5f6b79',font:{size:9},maxTicksLimit:8}},y:{grid:{color:'#18202a'},ticks:{color:'#5f6b79',font:{size:9}},suggestedMin:118,suggestedMax:132}}}})}
+function renderTable(){let s=document.getElementById('sort').value;let x=[...routes].sort((a,b)=>s==='fare'?b.fare-a.fare:s==='change'?b.change-a.change:b.pressure-a.pressure);document.getElementById('routeTable').innerHTML=x.map(a=>`<tr><td class="route">${a.r}</td><td>₹${a.fare.toLocaleString('en-IN')}</td><td class="${a.change>0?'up':'down'}">${a.change>0?'▲':'▼'} ${Math.abs(a.change)}%</td><td><span class="pill">${a.demand}</span></td><td><span class="pill ${a.pressure>80?'bad':a.pressure>55?'warn':'good'}">${a.pressure}/100</span></td><td class="muted">${a.note}</td></tr>`).join('')}
+function renderRoutes(){document.getElementById('routeGrid').innerHTML=routes.slice(0,6).map((a,i)=>`<div class="route-box"><strong>${a.r}</strong><div class="price">₹${a.fare.toLocaleString('en-IN')}</div><span class="${a.change>0?'up':'down'}" style="font-size:10px">${a.change>0?'▲':'▼'} ${Math.abs(a.change)}%</span></div>`).join('')}
+function renderHeat(){let html='';for(let i=0;i<48;i++){let v=(i*17+Math.floor(i/8)*11)%100;let c=v>83?'h6':v>67?'h5':v>51?'h4':v>34?'h3':v>17?'h2':'h1';html+=`<div class="cell ${c}" title="Pressure ${v}">${v}</div>`}document.getElementById('heatmap').innerHTML=html}
+function renderAirline(){new Chart(document.getElementById('airlineChart'),{type:'bar',data:{labels:['IndiGo','Air India','Akasa','SpiceJet','Vistara'],datasets:[{data:[5220,5940,5480,4710,6210],borderRadius:5,backgroundColor:'#79a8ff'}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#18202a'},ticks:{color:'#687484',font:{size:9},callback:v=>'₹'+v}},y:{grid:{display:false},ticks:{color:'#9aa5b3',font:{size:10}}}}}})}
+function exploreFare(){let f=document.getElementById('from').value,t=document.getElementById('to').value;if(f===t){alert('Choose different origin and destination.');return}let key=f+t,base=5000+(key.charCodeAt(0)*13+key.charCodeAt(2)*7)%2400;let d=Math.max(1,Math.round((new Date(document.getElementById('travelDate').value)-new Date('2026-09-03'))/86400000));let fare=Math.round(base*(1+Math.max(0,(20-d))*.012));document.getElementById('fareResult').textContent='₹'+fare.toLocaleString('en-IN');document.getElementById('fareMeta').textContent=`${f} → ${t} · ${d} days ahead · Demo estimate`}
+function refreshData(){document.getElementById('indexKpi').textContent=(126.8+Math.random()*1.8).toFixed(1);updateChart()}
+renderTable();renderRoutes();renderHeat();renderAirline();updateChart();
+</script>
+</body>
+</html>
