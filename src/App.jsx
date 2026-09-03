@@ -1,182 +1,72 @@
 import { useMemo, useState } from 'react';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Activity, Airplay, BarChart3, CheckCircle2, ChevronDown, Database, Download, ExternalLink, Gauge, Menu, Plane, RefreshCw, Search, Settings2, Table2, X } from 'lucide-react';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Activity, Airplay, BarChart3, CheckCircle2, ChevronDown, Database, Download, Gauge, Menu, Plane, RefreshCw, Search, Settings2, Table2, X, TrendingUp, Map, CalendarDays } from 'lucide-react';
 
 const routes = [
-  { route: 'DEL → BOM', fare: 5960, change: 4.8, demand: 'High', pressure: 86, note: 'Peak-weekend sensitivity' },
-  { route: 'DEL → BLR', fare: 6410, change: 5.6, demand: 'High', pressure: 91, note: 'Tight near-term inventory' },
-  { route: 'DEL → GOI', fare: 6840, change: 7.1, demand: 'High', pressure: 94, note: 'Leisure demand elevated' },
-  { route: 'BOM → BLR', fare: 4820, change: 2.9, demand: 'High', pressure: 74, note: 'Stable capacity' },
-  { route: 'CCU → DEL', fare: 5710, change: 3.2, demand: 'Medium', pressure: 63, note: 'Moderate upward drift' },
-  { route: 'HYD → DEL', fare: 5280, change: -1.4, demand: 'Medium', pressure: 48, note: 'Improving availability' },
-  { route: 'BLR → HYD', fare: 3310, change: 1.1, demand: 'Medium', pressure: 44, note: 'Short-haul stable' },
-  { route: 'MAA → BOM', fare: 4550, change: -2.2, demand: 'Low', pressure: 39, note: 'Competitive market' },
+  { route:'DEL → BOM', fare:5960, change:4.8, demand:'High', pressure:86, distance:1138, load:88, volatility:7.4, note:'Peak-weekend sensitivity' },
+  { route:'DEL → BLR', fare:6410, change:5.6, demand:'High', pressure:91, distance:1740, load:92, volatility:8.6, note:'Tight near-term inventory' },
+  { route:'DEL → GOI', fare:6840, change:7.1, demand:'High', pressure:94, distance:1510, load:90, volatility:9.1, note:'Leisure demand elevated' },
+  { route:'BOM → BLR', fare:4820, change:2.9, demand:'High', pressure:74, distance:845, load:86, volatility:5.8, note:'Stable capacity' },
+  { route:'CCU → DEL', fare:5710, change:3.2, demand:'Medium', pressure:63, distance:1315, load:79, volatility:5.1, note:'Moderate upward drift' },
+  { route:'HYD → DEL', fare:5280, change:-1.4, demand:'Medium', pressure:48, distance:1260, load:71, volatility:4.2, note:'Improving availability' },
+  { route:'BLR → HYD', fare:3310, change:1.1, demand:'Medium', pressure:44, distance:460, load:74, volatility:3.5, note:'Short-haul stable' },
+  { route:'MAA → BOM', fare:4550, change:-2.2, demand:'Low', pressure:39, distance:1035, load:66, volatility:3.1, note:'Competitive market' },
 ];
 
-const indexData = [
-  121.2, 121.7, 122.1, 121.6, 122.8, 123.1, 122.7, 123.4, 124.0, 123.8,
-  124.6, 124.2, 125.1, 124.9, 125.6, 126.0, 125.7, 126.4, 126.8, 126.2,
-  127.1, 126.7, 127.5, 127.2, 128.0, 127.6, 128.4, 128.1, 127.9, 128.7,
-  128.2, 129.0, 128.6, 129.4, 129.1, 130.0, 129.6, 130.3, 130.1, 130.8,
-  130.4, 131.0, 130.7, 131.5, 131.2,
-].map((value, index) => ({ day: `Aug ${21 + index}`, value, avg: Number((value - 0.55 + Math.sin(index / 3) * 0.18).toFixed(1)) }));
+const days = Array.from({length:45},(_,i)=>`Aug ${21+i}`);
+const indexValues = [121.2,121.7,122.1,121.6,122.8,123.1,122.7,123.4,124,123.8,124.6,124.2,125.1,124.9,125.6,126,125.7,126.4,126.8,126.2,127.1,126.7,127.5,127.2,128,127.6,128.4,128.1,127.9,128.7,128.2,129,128.6,129.4,129.1,130,129.6,130.3,130.1,130.8,130.4,131,130.7,131.5,131.2];
+const indexData = indexValues.map((value,i)=>({day:days[i],value,avg:Number((value-.55+Math.sin(i/3)*.18).toFixed(1))}));
+const trendData = indexData.map((d,i)=>({day:d.day,index:d.value,fares:Math.round(4900+(d.value-121)*55+Math.sin(i/2)*80),demand:Math.round(68+(d.value-121)*1.1+Math.sin(i/4)*4)}));
+const airlines = [{name:'IndiGo',fare:5220,share:38},{name:'Air India',fare:5940,share:25},{name:'Akasa Air',fare:5480,share:15},{name:'SpiceJet',fare:4710,share:12},{name:'Vistara*',fare:6210,share:10}];
+const cabinMix=[{name:'Economy',value:78},{name:'Premium Economy',value:15},{name:'Business',value:7}];
+const bookingCurve=[{days:45,fare:5100},{days:30,fare:5350},{days:21,fare:5520},{days:15,fare:5840},{days:10,fare:6210},{days:7,fare:6590},{days:3,fare:7180},{days:1,fare:7920}];
+const volatilityData=routes.map(r=>({route:r.route.replace(' → ','-'),volatility:r.volatility,change:r.change}));
+const dailyChange= indexData.slice(-20).map((d,i)=>({day:d.day.replace('Aug ',''),change:Number((i%2?0.4:-0.15+Math.sin(i)*.25).toFixed(2))}));
 
-const airlines = [
-  { name: 'IndiGo', fare: 5220, share: 38 },
-  { name: 'Air India', fare: 5940, share: 25 },
-  { name: 'Akasa Air', fare: 5480, share: 15 },
-  { name: 'SpiceJet', fare: 4710, share: 12 },
-  { name: 'Vistara*', fare: 6210, share: 10 },
-];
+const navItems=[['Overview','overview',Gauge],['Airfare Index','index',Activity],['Routes','routes',Plane],['Price Trends','trends',BarChart3],['Airlines','airlines',Airplay],['Fare Explorer','explorer',Search]];
+const formatINR=v=>`₹${v.toLocaleString('en-IN')}`;
+const chartTip={background:'#101720',border:'1px solid #273241',borderRadius:10,fontSize:11};
 
-const navItems = [
-  ['Overview', 'overview', Gauge],
-  ['Airfare Index', 'index', Activity],
-  ['Routes', 'routes', Plane],
-  ['Price Trends', 'trends', BarChart3],
-  ['Airlines', 'airlines', Airplay],
-  ['Fare Explorer', 'explorer', Search],
-];
+function PanelHeader({title,subtitle,right}){return <div className="panel-header"><div><h2>{title}</h2><p>{subtitle}</p></div>{right}</div>}
+function Kpi({title,value,change,context,accent='mint',suffix}){return <div className={`kpi-card ${accent}`}><div className="kpi-top"><span>{title}</span><TrendingUp size={14}/></div><div className="kpi-value">{value}<small>{suffix}</small></div><div className="kpi-change"><b>{change}</b><span>{context}</span></div></div>}
+function ChartBox({children,height=270}){return <div style={{height,width:'100%'}}>{children}</div>}
+function App(){
+ const [active,setActive]=useState('Overview'); const [horizon,setHorizon]=useState('T+15'); const [search,setSearch]=useState(''); const [sort,setSort]=useState('pressure');
+ const [from,setFrom]=useState('DEL'); const [to,setTo]=useState('BOM'); const [fare,setFare]=useState(5960); const [mobileOpen,setMobileOpen]=useState(false); const [refreshing,setRefreshing]=useState(false);
+ const visibleRoutes=useMemo(()=>{const f=routes.filter(x=>x.route.toLowerCase().includes(search.toLowerCase()));return [...f].sort((a,b)=>sort==='fare'?b.fare-a.fare:sort==='change'?b.change-a.change:b.pressure-a.pressure)},[search,sort]);
+ const chartData=useMemo(()=>indexData.slice(-Number(horizon.replace('T+',''))),[horizon]);
+ const jump=(label,id)=>{setActive(label);setMobileOpen(false);document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'})};
+ const refresh=()=>{setRefreshing(true);setTimeout(()=>setRefreshing(false),700)};
+ const explore=()=>{const seed=(from.charCodeAt(0)*19+to.charCodeAt(0)*11)%900;setFare(4300+seed+(from==='DEL'?420:0))};
+ return <>
+ <style>{` .analytics-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:10px;margin-bottom:10px}.analytics-grid.equal{grid-template-columns:1fr 1fr}.chart-tall{height:315px}.chart-mid{height:255px}.insight-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.insight{padding:11px 12px;background:#0a1017;border:1px solid #1b2530;border-radius:10px}.insight label{font-size:8px;color:#647181;text-transform:uppercase;letter-spacing:.1em}.insight strong{display:block;font:600 15px 'Space Grotesk';margin-top:5px}.insight small{display:block;color:#718091;font-size:8px;margin-top:3px}.chart-note{display:flex;justify-content:space-between;color:#5f6d7c;font-size:8px;margin-top:6px}.metric-bars{display:grid;gap:12px;margin-top:20px}.metric-bar{display:grid;grid-template-columns:100px 1fr 42px;align-items:center;gap:9px;font-size:9px;color:#9ba7b5}.metric-bar .track{height:7px;background:#17202b;border-radius:8px;overflow:hidden}.metric-bar .fill{height:100%;background:linear-gradient(90deg,#355b53,#76e4bd);border-radius:8px}.mini-table{width:100%;border-collapse:collapse;font-size:9px}.mini-table th{text-align:left;color:#5e6b7b;font-size:8px;text-transform:uppercase;padding:8px;border-bottom:1px solid #202a37}.mini-table td{padding:9px 8px;border-bottom:1px solid #18212c;color:#aeb8c3}.signal-up{color:#ff7d88}.signal-down{color:#76e4bd}.map-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:18px}.map-tile{min-height:68px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,.03);display:flex;flex-direction:column;justify-content:space-between}.map-tile b{font:600 11px 'Space Grotesk'}.map-tile span{font-size:8px;color:#718090}.heat1{background:#111a18}.heat2{background:#14251f}.heat3{background:#1a372b}.heat4{background:#24543f}.heat5{background:#31775a}.heat6{background:#4b9d78;color:#06130e}.legend-row{display:flex;gap:14px;font-size:8px;color:#687585;margin-top:10px}.legend-row span{display:flex;align-items:center;gap:5px}.dot{width:7px;height:7px;border-radius:50%;background:#76e4bd}.dot.blue{background:#79a8ff}.dot.red{background:#ff7d88}@media(max-width:900px){.analytics-grid,.analytics-grid.equal{grid-template-columns:1fr}.insight-row{grid-template-columns:1fr}.map-grid{grid-template-columns:repeat(2,1fr)}}`}</style>
+ <div className="app">
+  <aside className={`sidebar ${mobileOpen?'open':''}`}><div className="brand"><div className="brand-mark"><Plane size={17}/></div><div><div className="brand-name">Airfare Index</div><div className="brand-caption">Pricing Intelligence</div></div><button className="mobile-close" onClick={()=>setMobileOpen(false)}><X size={18}/></button></div><div className="nav-label">Workspace</div><nav>{navItems.map(([label,id,Icon])=><button key={id} className={active===label?'nav-item active':'nav-item'} onClick={()=>jump(label,id)}><Icon size={16}/><span>{label}</span></button>)}</nav><div className="nav-label reference">Analytics</div><nav><button className="nav-item" onClick={()=>jump('Data Quality','quality')}><CheckCircle2 size={16}/><span>Data Quality</span></button><button className="nav-item" onClick={()=>jump('Methodology','methodology')}><Table2 size={16}/><span>Methodology</span></button><button className="nav-item" onClick={()=>jump('API Access','api')}><Database size={16}/><span>API Access</span></button></nav><div className="sidebar-bottom"><div className="demo-card"><span>DEMO ENVIRONMENT</span><p>All observations are synthetic and for product demonstration only.</p></div></div></aside>
+  <main><header className="topbar"><div className="mobile-brand"><button onClick={()=>setMobileOpen(true)}><Menu size={21}/></button><strong>Airfare Index</strong></div><div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>{active}</strong></div><div className="top-actions"><div className="status-dot"><i/> Demo data</div><button className="icon-btn"><Settings2 size={17}/></button><button className="icon-btn"><Download size={17}/></button></div></header>
+  <section className="hero" id="overview"><div><div className="eyebrow">India domestic aviation · analytics workspace</div><h1>Airfare market monitor</h1><p>Understand how domestic airfare moves across routes, booking horizons, airlines, demand and data quality.</p></div><div className="hero-actions"><button className="secondary-btn">Last 45 days <ChevronDown size={14}/></button><button className="primary-btn" onClick={refresh}><RefreshCw size={14} className={refreshing?'spin':''}/>{refreshing?'Refreshing…':'Refresh data'}</button></div></section>
+  <section className="kpi-grid"><Kpi title="Airfare Price Index" value="131.2" change="+3.8%" context="vs. 30-day baseline"/><Kpi title="Median one-way fare" value="₹5,840" change="+2.1%" context="vs. prior period" accent="blue"/><Kpi title="Routes monitored" value="42" change="98.2%" context="coverage score" accent="amber"/><Kpi title="Data quality" value="96.8" suffix="/100" change="+0.7" context="points this week" accent="violet"/></section>
 
-const formatINR = (value) => `₹${value.toLocaleString('en-IN')}`;
+  <section className="section-grid" id="index"><div className="panel chart-panel"><PanelHeader title="Airfare Price Index" subtitle="Weighted composite · base = 100 · 45-day synthetic series" right={<div className="segmented">{['T+1','T+7','T+15','T+30','T+45'].map(x=><button key={x} className={horizon===x?'selected':''} onClick={()=>setHorizon(x)}>{x}</button>)}</div>}/><div className="chart-legend"><span><i className="legend-mint"/>Market index</span><span><i className="legend-blue"/>7D average</span></div><ChartBox height={295}><ResponsiveContainer><AreaChart data={chartData}><defs><linearGradient id="mintFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#76e4bd" stopOpacity=".25"/><stop offset="100%" stopColor="#76e4bd" stopOpacity="0"/></linearGradient></defs><CartesianGrid vertical={false} stroke="#1c2632"/><XAxis dataKey="day" tick={{fill:'#647080',fontSize:10}} axisLine={false} tickLine={false} minTickGap={28}/><YAxis tick={{fill:'#647080',fontSize:10}} axisLine={false} tickLine={false}/><Tooltip contentStyle={chartTip}/><Area type="monotone" dataKey="value" name="Index" stroke="#76e4bd" strokeWidth={2.4} fill="url(#mintFill)"/><Line type="monotone" dataKey="avg" name="7D average" stroke="#79a8ff" strokeWidth={1.5} strokeDasharray="4 4" dot={false}/></AreaChart></ResponsiveContainer></ChartBox><div className="insight-row"><div className="insight"><label>Current level</label><strong>131.2</strong><small>+8.3% from series start</small></div><div className="insight"><label>45D high</label><strong>131.5</strong><small>Peak observed in demo series</small></div><div className="insight"><label>Momentum</label><strong>Positive</strong><small>Recent slope remains upward</small></div></div></div>
+  <div className="panel" id="routes"><PanelHeader title="Route pressure leaderboard" subtitle="Composite pressure score from fare, demand and inventory" right={<span className="live-pill"><i/>Simulated</span>}/><div className="pressure-list">{routes.slice(0,6).map(r=><div className="pressure-row" key={r.route}><div className="route-code">{r.route}</div><div className="pressure-track"><span style={{width:`${r.pressure}%`}}/></div><b>{r.pressure}</b></div>)}</div><div className="panel-foot">Higher scores indicate tighter pricing conditions and greater near-term fare pressure.</div></div></section>
 
-function App() {
-  const [active, setActive] = useState('Overview');
-  const [horizon, setHorizon] = useState('T+15');
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('pressure');
-  const [from, setFrom] = useState('DEL');
-  const [to, setTo] = useState('BOM');
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [fare, setFare] = useState(5960);
+  <section className="analytics-grid" id="trends"><div className="panel"><PanelHeader title="Fare trend vs demand" subtitle="Indexed demand and median fare movement over the same observation window"/><ChartBox height={315}><ResponsiveContainer><LineChart data={trendData}><CartesianGrid vertical={false} stroke="#1c2632"/><XAxis dataKey="day" tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false} minTickGap={30}/><YAxis yAxisId="left" tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false}/><YAxis yAxisId="right" orientation="right" tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false}/><Tooltip contentStyle={chartTip}/><Line yAxisId="left" type="monotone" dataKey="fares" name="Median fare" stroke="#79a8ff" strokeWidth={2} dot={false}/><Line yAxisId="right" type="monotone" dataKey="demand" name="Demand index" stroke="#76e4bd" strokeWidth={2} dot={false}/></LineChart></ResponsiveContainer></ChartBox><div className="chart-note"><span>Fare: ₹ per one-way</span><span>Demand: synthetic index</span></div></div>
+  <div className="panel"><PanelHeader title="Daily index movement" subtitle="Short-term changes in the composite index"/><ChartBox height={315}><ResponsiveContainer><BarChart data={dailyChange}><CartesianGrid vertical={false} stroke="#1c2632"/><XAxis dataKey="day" tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false}/><YAxis tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false}/><Tooltip contentStyle={chartTip}/><Bar dataKey="change" name="Daily change" fill="#76e4bd" radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></ChartBox></div></section>
 
-  const visibleRoutes = useMemo(() => {
-    const filtered = routes.filter((item) => item.route.toLowerCase().includes(search.toLowerCase()));
-    return [...filtered].sort((a, b) => {
-      if (sort === 'fare') return b.fare - a.fare;
-      if (sort === 'change') return b.change - a.change;
-      return b.pressure - a.pressure;
-    });
-  }, [search, sort]);
+  <section className="analytics-grid equal" id="airlines"><div className="panel"><PanelHeader title="Airline fare comparison" subtitle="Median fare by airline across monitored sectors" right={<span className="muted-small">₹ / one-way</span>}/><ChartBox height={280}><ResponsiveContainer><BarChart data={airlines} layout="vertical" margin={{left:5,right:20}}><CartesianGrid horizontal={false} stroke="#1c2632"/><XAxis type="number" tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false}/><YAxis type="category" dataKey="name" width={72} tick={{fill:'#aeb8c3',fontSize:9}} axisLine={false} tickLine={false}/><Tooltip contentStyle={chartTip}/><Bar dataKey="fare" name="Median fare" fill="#79a8ff" radius={[0,5,5,0]}/></BarChart></ResponsiveContainer></ChartBox></div>
+  <div className="panel"><PanelHeader title="Airline market mix" subtitle="Illustrative share of monitored observations"/><ChartBox height={280}><ResponsiveContainer><PieChart><Pie data={airlines} dataKey="share" nameKey="name" cx="50%" cy="50%" innerRadius={68} outerRadius={105} paddingAngle={3}>{airlines.map((x,i)=><Cell key={i} fill={['#76e4bd','#79a8ff','#f0c86e','#b39cff','#ff7d88'][i]}/>)}</Pie><Tooltip contentStyle={chartTip}/></PieChart></ResponsiveContainer></ChartBox></div></section>
 
-  const chartData = useMemo(() => {
-    const count = Number(horizon.replace('T+', '')) || 15;
-    return indexData.slice(-count);
-  }, [horizon]);
+  <section className="analytics-grid equal"><div className="panel"><PanelHeader title="Booking-horizon price curve" subtitle="How indicative median fare changes as departure approaches" right={<span className="muted-small">Days before departure</span>}/><ChartBox height={285}><ResponsiveContainer><AreaChart data={bookingCurve}><CartesianGrid vertical={false} stroke="#1c2632"/><XAxis dataKey="days" reversed tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false}/><YAxis tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false}/><Tooltip contentStyle={chartTip}/><Area type="monotone" dataKey="fare" name="Indicative fare" stroke="#76e4bd" fill="#76e4bd" fillOpacity=".12" strokeWidth={2}/></AreaChart></ResponsiveContainer></ChartBox></div>
+  <div className="panel"><PanelHeader title="Fare volatility by route" subtitle="Variation score across the synthetic observation window"/><ChartBox height={285}><ResponsiveContainer><BarChart data={volatilityData} layout="vertical" margin={{left:10,right:15}}><CartesianGrid horizontal={false} stroke="#1c2632"/><XAxis type="number" tick={{fill:'#647080',fontSize:9}} axisLine={false} tickLine={false}/><YAxis type="category" dataKey="route" width={76} tick={{fill:'#aeb8c3',fontSize:9}} axisLine={false} tickLine={false}/><Tooltip contentStyle={chartTip}/><Bar dataKey="volatility" name="Volatility score" fill="#b39cff" radius={[0,5,5,0]}/></BarChart></ResponsiveContainer></ChartBox></div></section>
 
-  const jump = (label, id) => {
-    setActive(label);
-    setMobileOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  <section className="analytics-grid equal"><div className="panel"><PanelHeader title="Sector pressure map" subtitle="Corridor-level view of relative pricing stress" right={<Map size={15} color="#6f7e8e"/>}/><div className="map-grid">{routes.map((r,i)=><div key={r.route} className={`map-tile heat${r.pressure>88?6:r.pressure>75?5:r.pressure>60?4:r.pressure>48?3:r.pressure>42?2:1}`}><b>{r.route}</b><span>{r.pressure}/100 pressure</span></div>)}</div><div className="legend-row"><span><i className="dot"/>Low</span><span><i className="dot blue"/>Moderate</span><span><i className="dot red"/>High</span></div></div>
+  <div className="panel"><PanelHeader title="Cabin mix" subtitle="Synthetic observation composition"/><ChartBox height={245}><ResponsiveContainer><PieChart><Pie data={cabinMix} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={88} label={({name,value})=>`${name}: ${value}%`}>{cabinMix.map((x,i)=><Cell key={i} fill={['#76e4bd','#79a8ff','#b39cff'][i]}/>)}</Pie><Tooltip contentStyle={chartTip}/></PieChart></ResponsiveContainer></ChartBox></div></section>
 
-  const refresh = () => {
-    setRefreshing(true);
-    window.setTimeout(() => setRefreshing(false), 700);
-  };
+  <section className="panel full-panel" id="routes-table"><PanelHeader title="Route-wise airfare tracking" subtitle="Detailed sector diagnostics · synthetic median one-way economy fares" right={<div className="table-tools"><div className="search"><Search size={14}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search route…"/></div><select value={sort} onChange={e=>setSort(e.target.value)}><option value="pressure">Sort: pressure</option><option value="fare">Sort: fare</option><option value="change">Sort: change</option></select></div>}/><div className="table-wrap"><table><thead><tr><th>Sector</th><th>Fare</th><th>30D change</th><th>Demand</th><th>Load factor</th><th>Pressure</th><th>Volatility</th><th>Signal</th></tr></thead><tbody>{visibleRoutes.map(r=><tr key={r.route}><td><strong>{r.route}</strong></td><td>{formatINR(r.fare)}</td><td className={r.change>0?'red':'mint'}>{r.change>0?'▲':'▼'} {Math.abs(r.change)}%</td><td><span className="tag">{r.demand}</span></td><td>{r.load}%</td><td><span className={`pressure-tag ${r.pressure>80?'high':r.pressure>55?'mid':'low'}`}>{r.pressure}/100</span></td><td>{r.volatility.toFixed(1)}</td><td className="muted">{r.note}</td></tr>)}</tbody></table></div></section>
 
-  const explore = () => {
-    const seed = (from.charCodeAt(0) * 19 + to.charCodeAt(0) * 11) % 900;
-    setFare(4300 + seed + (from === 'DEL' ? 420 : 0));
-  };
+  <section className="panel full-panel" id="explorer"><PanelHeader title="Fare explorer" subtitle="Interactive query layer for sector, date and cabin assumptions" right={<span className="live-pill">MODEL READY</span>}/><div className="explorer-grid"><Field label="From"><select value={from} onChange={e=>setFrom(e.target.value)}>{['DEL','BOM','BLR','HYD','CCU','MAA'].map(x=><option key={x}>{x}</option>)}</select></Field><Field label="To"><select value={to} onChange={e=>setTo(e.target.value)}>{['BOM','DEL','BLR','HYD','CCU','MAA'].map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Travel date"><input type="date" defaultValue="2026-09-18"/></Field><Field label="Cabin"><select><option>Economy</option><option>Premium Economy</option><option>Business</option></select></Field><button className="primary-btn explore-btn" onClick={explore}>Find indicative fare</button></div><div className="fare-result"><div><span>INDICATIVE MEDIAN</span><strong>{formatINR(fare)}</strong></div><div className="result-meta">{from} → {to} · T+15 · Demo estimate</div></div></section>
 
-  return (
-    <div className="app">
-      <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
-        <div className="brand">
-          <div className="brand-mark"><Plane size={17} strokeWidth={2.5} /></div>
-          <div><div className="brand-name">Airfare Index</div><div className="brand-caption">Pricing Intelligence</div></div>
-          <button className="mobile-close" onClick={() => setMobileOpen(false)}><X size={18} /></button>
-        </div>
-        <div className="nav-label">Workspace</div>
-        <nav>
-          {navItems.map(([label, id, Icon]) => (
-            <button key={id} className={active === label ? 'nav-item active' : 'nav-item'} onClick={() => jump(label, id)}>
-              <Icon size={16} /><span>{label}</span>
-            </button>
-          ))}
-        </nav>
-        <div className="nav-label reference">Reference</div>
-        <nav>
-          <button className="nav-item" onClick={() => jump('Data Quality', 'quality')}><CheckCircle2 size={16} /><span>Data Quality</span></button>
-          <button className="nav-item" onClick={() => jump('Methodology', 'methodology')}><Table2 size={16} /><span>Methodology</span></button>
-          <button className="nav-item" onClick={() => jump('API Access', 'api')}><Database size={16} /><span>API Access</span></button>
-        </nav>
-        <div className="sidebar-bottom"><div className="demo-card"><span>DEMO ENVIRONMENT</span><p>All observations are synthetic and for product demonstration only.</p></div></div>
-      </aside>
-
-      <main>
-        <header className="topbar">
-          <div className="mobile-brand"><button onClick={() => setMobileOpen(true)}><Menu size={21} /></button><strong>Airfare Index</strong></div>
-          <div className="breadcrumbs"><span>Workspace</span><b>/</b><strong>{active}</strong></div>
-          <div className="top-actions"><div className="status-dot"><i /> Demo data</div><button className="icon-btn"><Settings2 size={17} /></button><button className="icon-btn"><Download size={17} /></button></div>
-        </header>
-
-        <section className="hero" id="overview">
-          <div><div className="eyebrow">India domestic aviation</div><h1>Airfare market monitor</h1><p>Track price movement, route pressure and booking-horizon signals across major domestic sectors.</p></div>
-          <div className="hero-actions"><button className="secondary-btn">Last 45 days <ChevronDown size={14} /></button><button className="primary-btn" onClick={refresh}><RefreshCw size={14} className={refreshing ? 'spin' : ''} />{refreshing ? 'Refreshing…' : 'Refresh data'}</button></div>
-        </section>
-
-        <section className="kpi-grid">
-          <Kpi title="Airfare Price Index" value="131.2" change="+3.8%" context="vs. 30-day baseline" accent="mint" />
-          <Kpi title="Median one-way fare" value="₹5,840" change="+2.1%" context="vs. prior period" accent="blue" />
-          <Kpi title="Routes monitored" value="42" change="98.2%" context="coverage score" accent="amber" suffix="" />
-          <Kpi title="Data quality" value="96.8" change="+0.7" context="points this week" accent="violet" suffix="/100" />
-        </section>
-
-        <section className="section-grid" id="index">
-          <div className="panel chart-panel">
-            <PanelHeader title="Airfare Price Index" subtitle="Weighted composite · base = 100 · indicative demo series" right={<div className="segmented">{['T+1','T+7','T+15','T+30','T+45'].map((item) => <button key={item} className={horizon === item ? 'selected' : ''} onClick={() => setHorizon(item)}>{item}</button>)}</div>} />
-            <div className="chart-legend"><span><i className="legend-mint" />Market index</span><span><i className="legend-blue" />Rolling 7D average</span></div>
-            <div className="chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={chartData} margin={{ top: 12, right: 8, left: -20, bottom: 0 }}><defs><linearGradient id="fillMint" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#76e4bd" stopOpacity={0.22}/><stop offset="100%" stopColor="#76e4bd" stopOpacity={0}/></linearGradient></defs><CartesianGrid vertical={false} stroke="#1c2632" /><XAxis dataKey="day" tick={{ fill:'#647080', fontSize:10 }} axisLine={false} tickLine={false} minTickGap={30}/><YAxis domain={['dataMin - 2','dataMax + 1']} tick={{ fill:'#647080', fontSize:10 }} axisLine={false} tickLine={false}/><Tooltip contentStyle={{ background:'#101720', border:'1px solid #273241', borderRadius:10, fontSize:11 }} labelStyle={{ color:'#8d9aaa' }}/><Area type="monotone" dataKey="value" stroke="#76e4bd" strokeWidth={2.2} fill="url(#fillMint)"/><Area type="monotone" dataKey="avg" stroke="#79a8ff" strokeWidth={1.5} strokeDasharray="4 4" fill="none"/></AreaChart></ResponsiveContainer></div>
-          </div>
-
-          <div className="panel" id="routes">
-            <PanelHeader title="Route pressure" subtitle="Highest current fare movement" right={<span className="live-pill"><i/>Simulated</span>} />
-            <div className="pressure-list">{routes.slice(0,5).map((item) => <div className="pressure-row" key={item.route}><div className="route-code">{item.route}</div><div className="pressure-track"><span style={{width:`${item.pressure}%`}} /></div><b>{item.pressure}</b></div>)}</div>
-            <div className="panel-foot">Pressure combines fare change, demand and inventory signals.</div>
-          </div>
-        </section>
-
-        <section className="section-grid two" id="trends">
-          <div className="panel" id="airlines">
-            <PanelHeader title="Airline comparison" subtitle="Median fare across monitored sectors" right={<span className="muted-small">₹ / one-way</span>} />
-            <div className="airline-list">{airlines.map((item) => <div className="airline-row" key={item.name}><div className="airline-name">{item.name}</div><div className="airline-bar"><span style={{width:`${(item.fare/6500)*100}%`}} /></div><strong>{formatINR(item.fare)}</strong></div>)}</div>
-            <div className="panel-foot">* Legacy brand grouping used only in this synthetic dataset.</div>
-          </div>
-          <div className="panel">
-            <PanelHeader title="Sector heatmap" subtitle="Relative fare pressure by corridor" />
-            <div className="heatmap">{Array.from({length:42}, (_,i) => { const value=(i*23+17)%100; const level=value>82?6:value>68?5:value>52?4:value>35?3:value>17?2:1; return <div key={i} className={`heat-cell h${level}`} title={`Pressure ${value}`}>{value}</div>; })}</div>
-            <div className="heat-labels"><span>Lower pressure</span><span>Higher pressure</span></div>
-          </div>
-        </section>
-
-        <section className="panel full-panel" id="routes-table">
-          <PanelHeader title="Route-wise airfare tracking" subtitle="Indicative median one-way economy fares" right={<div className="table-tools"><div className="search"><Search size={14}/><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search route…"/></div><select value={sort} onChange={(e)=>setSort(e.target.value)}><option value="pressure">Sort: pressure</option><option value="fare">Sort: fare</option><option value="change">Sort: change</option></select></div>} />
-          <div className="table-wrap"><table><thead><tr><th>Sector</th><th>Median fare</th><th>30D change</th><th>Demand</th><th>Pressure</th><th>Signal</th></tr></thead><tbody>{visibleRoutes.map((item)=><tr key={item.route}><td><strong>{item.route}</strong></td><td>{formatINR(item.fare)}</td><td className={item.change > 0 ? 'red' : 'mint'}>{item.change > 0 ? '▲' : '▼'} {Math.abs(item.change)}%</td><td><span className="tag">{item.demand}</span></td><td><span className={`pressure-tag ${item.pressure > 80 ? 'high' : item.pressure > 55 ? 'mid' : 'low'}`}>{item.pressure}/100</span></td><td className="muted">{item.note}</td></tr>)}</tbody></table></div>
-        </section>
-
-        <section className="panel full-panel" id="explorer">
-          <PanelHeader title="Fare explorer" subtitle="Query the synthetic market model by sector and booking horizon" right={<span className="live-pill">MODEL READY</span>} />
-          <div className="explorer-grid"><Field label="From"><select value={from} onChange={(e)=>setFrom(e.target.value)}>{['DEL','BOM','BLR','HYD','CCU','MAA'].map(x=><option key={x}>{x}</option>)}</select></Field><Field label="To"><select value={to} onChange={(e)=>setTo(e.target.value)}>{['BOM','DEL','BLR','HYD','CCU','MAA'].map(x=><option key={x}>{x}</option>)}</select></Field><Field label="Travel date"><input type="date" defaultValue="2026-09-18"/></Field><Field label="Cabin"><select><option>Economy</option><option>Premium Economy</option></select></Field><button className="primary-btn explore-btn" onClick={explore}>Find indicative fare</button></div>
-          <div className="fare-result"><div><span>INDICATIVE MEDIAN</span><strong>{formatINR(fare)}</strong></div><div className="result-meta">{from} → {to} · T+15 · Demo estimate</div></div>
-        </section>
-
-        <section className="info-grid">
-          <div className="panel" id="quality"><PanelHeader title="Data quality" subtitle="Pipeline health snapshot" right={<span className="live-pill"><i/>Healthy</span>} /><div className="quality-grid"><Metric value="98.2%" label="Route coverage"/><Metric value="99.1%" label="Schema validity"/><Metric value="0.8%" label="Missing values"/><Metric value="4m" label="Freshness lag"/></div></div>
-          <div className="panel" id="methodology"><PanelHeader title="Methodology" subtitle="Transparent index design"/><p className="info-copy">The production index is designed as a route-weighted measure of domestic airfare movement. Inputs can include fare observations, booking horizon, cabin, airline, demand and data-quality flags. This interface currently uses synthetic observations.</p><button className="text-link">Read methodology <ExternalLink size={13}/></button></div>
-          <div className="panel" id="api"><PanelHeader title="API & data access" subtitle="Production interface preview" right={<span className="tag">v0.1</span>}/><pre>GET /api/v1/index?route=DEL-BOM&horizon=T+15{`\n`}GET /api/v1/routes?date=2026-09-03{`\n`}GET /api/v1/fare-explorer?from=DEL&to=BOM</pre></div>
-        </section>
-        <footer>Airfare Index · Demo environment · Synthetic data · Built as a frontend prototype for aviation pricing intelligence</footer>
-      </main>
-    </div>
-  );
+  <section className="info-grid"><div className="panel" id="quality"><PanelHeader title="Data quality" subtitle="Pipeline health snapshot" right={<span className="live-pill"><i/>96.8 / 100</span>}/><div className="metric-bars"><div className="metric-bar"><span>Completeness</span><div className="track"><div className="fill" style={{width:'98%'}}/></div><b>98%</b></div><div className="metric-bar"><span>Freshness</span><div className="track"><div className="fill" style={{width:'97%'}}/></div><b>97%</b></div><div className="metric-bar"><span>Validation</span><div className="track"><div className="fill" style={{width:'95%'}}/></div><b>95%</b></div><div className="metric-bar"><span>Coverage</span><div className="track"><div className="fill" style={{width:'98.2%'}}/></div><b>98.2%</b></div></div></div><div className="panel" id="methodology"><PanelHeader title="Methodology" subtitle="Index construction at a glance"/><p className="info-copy">The demo index is a weighted composite of route-level median fares. Route pressure combines fare movement, demand and indicative inventory tightness. In production, weights and validation rules would be aligned to the official CPI methodology and approved data sources.</p><div className="metric-bars"><div className="metric-bar"><span>Route fares</span><div className="track"><div className="fill" style={{width:'55%'}}/></div><b>55%</b></div><div className="metric-bar"><span>Demand signal</span><div className="track"><div className="fill" style={{width:'25%'}}/></div><b>25%</b></div><div className="metric-bar"><span>Inventory</span><div className="track"><div className="fill" style={{width:'20%'}}/></div><b>20%</b></div></div></div><div className="panel" id="api"><PanelHeader title="API access" subtitle="Preview of a future machine-readable interface" right={<Database size={15} color="#6f7e8e"/>}/><pre>{`GET /api/v1/airfare-index?date=2026-09-18\n\n{\n  "index": 131.2,\n  "base": 100,\n  "routes": 42,\n  "quality": 96.8,\n  "status": "demo"\n}`}</pre></div></section>
+  <footer>Airfare Index · Pricing intelligence prototype · DEMO DATA ONLY · Not an official government or airline dataset.</footer></main></div></>;
 }
-
-function Kpi({ title, value, change, context, accent, suffix='' }) { return <div className={`kpi-card ${accent}`}><div className="kpi-top"><span>{title}</span><div className="mini-icon"><Activity size={14}/></div></div><div className="kpi-value">{value}<small>{suffix}</small></div><div className="kpi-change"><b>{change}</b><span>{context}</span></div></div>; }
-function PanelHeader({ title, subtitle, right }) { return <div className="panel-header"><div><h2>{title}</h2><p>{subtitle}</p></div>{right}</div>; }
-function Field({label,children}) { return <div className="field"><label>{label}</label>{children}</div>; }
-function Metric({value,label}) { return <div className="metric"><strong>{value}</strong><span>{label}</span></div>; }
-
+function Field({label,children}){return <div className="field"><label>{label}</label>{children}</div>}
 export default App;
