@@ -1,0 +1,21 @@
+{
+  "asOf": "2026-09-04",
+  "status": "pilot",
+  "pilotComposite": 107.76,
+  "horizonWeights": {"T+1": 0.25, "T+7": 0.25, "T+15": 0.25, "T+21": 0.25},
+  "horizonIndex": [
+    {"horizon":"T+1","index":112.90,"representativeFare":7596.80,"contribution":28.22},
+    {"horizon":"T+7","index":114.64,"representativeFare":7569.38,"contribution":28.66},
+    {"horizon":"T+15","index":103.50,"representativeFare":7124.38,"contribution":25.88},
+    {"horizon":"T+21","index":100.00,"representativeFare":6821.47,"contribution":25.00}
+  ],
+  "routes": [
+    {"route":"DEL-BOM","name":"Delhi ↔ Mumbai","weight":44.7562,"passengers":64524534,"horizons":{"T+1":{"fare":6635,"index":101.61,"n":14},"T+7":{"fare":6720,"index":102.91,"n":13},"T+15":{"fare":6530,"index":100,"n":10},"T+21":{"fare":6530,"index":100,"n":15}}},
+    {"route":"DEL-BLR","name":"Delhi ↔ Bengaluru","weight":29.8853,"passengers":43085268,"horizons":{"T+1":{"fare":9771,"index":110.67,"n":11},"T+7":{"fare":8829,"index":100,"n":10},"T+15":{"fare":9815,"index":111.17,"n":8},"T+21":{"fare":8829,"index":100,"n":8}}},
+    {"route":"BLR-BOM","name":"Bengaluru ↔ Mumbai","weight":25.3586,"passengers":36559204,"horizons":{"T+1":{"fare":6732,"index":135.45,"n":9},"T+7":{"fare":7584,"index":152.60,"n":9},"T+15":{"fare":5002.5,"index":100.65,"n":10},"T+21":{"fare":4970,"index":100,"n":7}}}
+  ],
+  "quality": {"rawObservations":161,"qualifyingObservations":124,"routes":3,"cells":12,"completeCells":12},
+  "airlines": [
+    {"name":"IndiGo","fare":7780},{"name":"Air India","fare":7650},{"name":"Akasa Air","fare":7550},{"name":"Air India Express","fare":8000},{"name":"SpiceJet","fare":8050}
+  ]
+}
